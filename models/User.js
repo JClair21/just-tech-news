@@ -1,12 +1,14 @@
-const {
-    Model,
-    DataTypes
-} = require('sequelize');
+const { Model,DataTypes} = require('sequelize');
 const sequelize = require('../config/connection');
 const bcrypt = require('bcrypt');
 
 //create our User model
-class User extends Model {}
+class User extends Model {
+    //Set up method to run on instance data (per use ) to check password 
+checkPassword(loginPw) {
+    return bcrypt.compareSync(loginPW, this.password);
+}
+}
 
 //define fields/columns and configuration
 User.init({
@@ -31,7 +33,6 @@ User.init({
             isEmail: true
         }
     },
-    //define a password column
     password: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -40,27 +41,27 @@ User.init({
             len: [4]
         }
     }
-}, {
+}, 
+{
     hooks: {
         //set up beforeCreate lifecycle "hook" functionality
         async beforeCreate(newuserData) {
-            newUserData.password - await bcrypt.hash(newUserData.password, 10);
-            return newUserData
+            newUserData.password = await bcrypt.hash(newUserData.password, 10);
+            return newUserData;
         },
         //set up beforeUpdate lifecycle "hook" functionality
-        async beforeUpdate(updatedUserData) {
+        async beforeUpdate(updateUserData) {
             updatedUserData.password = await bcrypt.hash(updatedUserData.password, 10);
             return updatedUserData;
         }
     },
-
-}, {
     sequelize,
     timestamps: false,
     freezeTableName: true,
     underscored: true,
     modelName: 'user'
-}, );
+}
+);
 //TABLE CONFIGURATION OPTIONS GO HERE (https://sequelize.org/v5/manual/models-definition.html#configuration))
 
 // //pass in our imported sequelize connection (the direct connection to our database)
@@ -71,7 +72,7 @@ User.init({
 //     freezeTableName: true,
 //     //use underscores instead of camel-casing (i.e. 'comment_text' and not 'CommentText)
 //     underscored: true,
-//     //make it so our model name stays the lowercasae in the database
+//     //make it so our model name stays the lowercase in the database
 //     modelName: 'user'
 // }
 // );
