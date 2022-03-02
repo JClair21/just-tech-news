@@ -1,14 +1,11 @@
 const router = require('express').Router();
-const {
-    User
-} = require('../../models');
+const res = require('express/lib/response');
+const { User, Post, Vote } = require('../../models');
 
 // get all users
 router.get('/', (req, res) => {
     User.findAll({
-            attributes: {
-                exclude: ['password']
-            }
+            attributes: {exclude: ['password'] }
         })
         .then(dbUserData => res.json(dbUserData))
         .catch(err => {
@@ -20,12 +17,23 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
     User.findOne({
             attributes: {
-                exclude: ['password']
-            },
+                exclude: ['password'] },
             where: {
                 id: req.params.id
-            }
-        })
+            },
+            include: [
+        {
+            model: Post,
+            attributes: ['id', 'title', 'post_url', 'created_at']
+        },
+        {
+            model: Post,
+            attributes: ['title'],
+            through: Vote,
+            as: 'voted_posts'
+        }
+            ]
+    })
         .then(dbUserData => {
             if (!dbUserData) {
                 res.status(404).json({
@@ -39,7 +47,9 @@ router.get('/:id', (req, res) => {
             console.log(err);
             res.status(500).json(err);
         });
+        return;
 });
+res.json(dbUserData);
 
 router.post('/', (req, res) => {
     // expects {username: 'Lernantino', email: 'lernantino@gmail.com', password: 'password1234'}
@@ -83,7 +93,6 @@ router.post('/login', (req, res) => {
             message: 'You are now logged in!'
         });
     });
-});
 
 router.put('/:id', (req, res) => {
     // expects {username: 'Lernantino', email: 'lernantino@gmail.com', password: 'password1234'}
@@ -128,6 +137,7 @@ router.delete('/:id', (req, res) => {
         .catch(err => {
             console.log(err);
             res.status(500).json(err);
+        
         });
 });
 
